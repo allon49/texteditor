@@ -89,7 +89,8 @@ ApplicationWindow {
 
     onStart: {
         console.log("démarre l'appli")
-        Activity.start(items) }
+        //Activity.start(items)
+    }
 
     onStop: { Activity.stop() }
 
@@ -217,6 +218,7 @@ ApplicationWindow {
             textAreaDestination.prepareAnswerFields()
         }
     }
+
 
 
     FileDialog {
@@ -539,6 +541,8 @@ ApplicationWindow {
         Accessible.name: "destDocument"
         id: textAreaDestination
 
+        property var multipleChoicesElementsArray : []
+
 
         function colorBracketContent() {
 
@@ -593,7 +597,9 @@ ApplicationWindow {
 
             var nbOfCharactersRemoved = 0
 
-            var multipleChoicesElementsArray = [];
+            var indexTest = 0
+
+            multipleChoicesElementsArray = []
 
             for (var i = 0; i < textArea.length; i++) {
                 var oneTextChar = textArea.getText(i,i+1)
@@ -633,9 +639,9 @@ ApplicationWindow {
                         }
                         else
                         {
-                            console.log("--------"+multipleChoiceElementStrArray[j][multipleChoiceElementStrArray[j].length-1])
+                            console.log("+-+-+------"+multipleChoiceElementStrArray[j])
                             if (multipleChoiceElementStrArray[j][multipleChoiceElementStrArray[j].length-1] == "*") {
-
+                                multipleChoiceElementStrArray[j] = multipleChoiceElementStrArray[j].substr(0,multipleChoiceElementStrArray[j].length-1)
                                 goodAnswersArray.push(multipleChoiceElementStrArray[j])
                             }
                             else {
@@ -645,13 +651,17 @@ ApplicationWindow {
                     }
 
                     //store the for each question, its position, its good and bad answers
-                    var multipleChoiceElement = {posInText:0, question:questionStr, goodAnswers:goodAnswersArray, badAnswers:badAnswersArray}
+                    var multipleChoiceElement = {posInText:0, question:questionStr, questionLength:0, goodAnswers:goodAnswersArray, badAnswers:badAnswersArray}
                     multipleChoiceElement.posInText = openingBracketPosInDestTextArea
                     multipleChoiceElement.question = questionStr
                     var questionLength = questionStr.length
+                    multipleChoiceElement.questionLength = questionLength
                     multipleChoiceElement.goodAnswers = goodAnswersArray
                     multipleChoiceElement.badAnswers = badAnswersArray
                     multipleChoicesElementsArray.push(multipleChoiceElement)
+
+                    console.log("***************** push element no " + indexTest)
+                    indexTest = indexTest +1
 
                     console.log("--- multipleChoiceElement.question: " + multipleChoiceElement.question)
                     console.log("--- multipleChoiceElement.goodAnswers: " + multipleChoiceElement.goodAnswers)
@@ -671,12 +681,8 @@ ApplicationWindow {
                     nbOfCharactersRemoved = nbOfCharactersRemoved + (closingBracketPos - openingBracketPos - questionLength +1)
                     console.log("nbOfCharactersRemoved: " + nbOfCharactersRemoved)
                 }
-
-
-
-
-
             }
+
 
             //display the multiple choices answerFields
             for (var i = 0; i < multipleChoicesElementsArray.length; i++) {
@@ -761,79 +767,58 @@ ApplicationWindow {
         }
 
 
-
-
         frameVisible: false
         width: parent.width
         height: parent.height/3
         anchors.top: textArea.bottom
-      //  anchors.bottom: parent.bottom
-      //  baseUrl: "qrc:/"
         text: "tt" //document.text
         textFormat: Qt.RichText
         Component.onCompleted: forceActiveFocus()
 
+        onCursorPositionChanged: {
+
+            console.log("il y a ... ekements" + textAreaDestination.multipleChoicesElementsArray.length)
+            for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
+
+                var wordStartPos = textAreaDestination.multipleChoicesElementsArray[i].posInText
+                var wordEndPos = wordStartPos + textAreaDestination.multipleChoicesElementsArray[i].questionLength
+
+                console.log("cursorPosition: " + cursorPosition + " -- wordStartPos" + wordStartPos + " -- wordEndPos" + wordEndPos)
+
+                if (cursorPosition >= wordStartPos && cursorPosition <= wordEndPos) {
+
+                    console.log("----detected : cursorPosition: " + cursorPosition + " -- wordStartPos" + wordStartPos + " -- wordEndPos" + wordEndPos + " i: " + i)
+
+                    var rect = textAreaDestination.positionToRectangle(textAreaDestination.selectionStart)
+                    answerChoices.x = rect.x - rect.width
+                    answerChoices.y = rect.y +rect.height + textArea.height + mainToolBar.height
+                    answerChoices.visible = true
+                    /*testRec.x = rect.x - rect.width
+                    console.log(rect.width)
+                    testRec.y = rect.y +rect.height + textArea.height + mainToolBar.height*/
+
+                    console.log("----question: " + textAreaDestination.multipleChoicesElementsArray[i].question)
+                    console.log("----good answers: " + textAreaDestination.multipleChoicesElementsArray[i].goodAnswers)
+                    console.log("----bad answers: " + textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
+
+                    var multipleChoicesArray = []
+                    multipleChoicesArray = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers
+                    multipleChoicesArray.push(textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
+                    console.log("----multipleChoicesArray: " + multipleChoicesArray)
 
 
-          onCursorPositionChanged: {
-            //errorMessage2.text = cursorPosition
+                    console.log(rect.y)
+                    console.log(textArea.height)
+                    console.log(rect.y + textArea.height + mainToolBar.height)
+                    console.log(mainToolBar.height)
 
-            errorMessage2.text = findWhichAnswerFieldAsBeenClicked(cursorPosition)
+                 }
 
+            }
 
-            textAreaDestination.selectWord()
-
-
-
-                var rect = textAreaDestination.positionToRectangle(textAreaDestination.cursorPosition)
-              console.log("testing")
-              console.log(rect)
-
-/*                answerFieldRect.x = rect.x
-                answerFieldRect.y = rect.y + textAreaDestination.top
-                answerFieldRect.height = rect.height
-                answerFieldRect.width = 100
-                answerFieldRect.visible*/
-              testRec.x = rect.x
-              testRec.y = rect.y +
-              console.log(textAreaDestination.top)
-              //Rec.visible = true
-
-
-
-
-
-
-             /*   startAndEndPosAnswerField
-
-                var startAndEndPosAnswerField = Activity.newStartAndEndPosAnswerField(textAreaDestination.cursorPosition);
-                var startPosAnswerField = startAndEndPosAnswerField.startPosAnswerField
-                var endPosAnswerField = startAndEndPosAnswerField.endPosAnswerField
-
-                console.log("********test")
-                console.log(startPosAnswerField)
-                console.log(endPosAnswerField)
-
-                var answerFieldIndex = findWhichAnswerFieldAsBeenClicked()
-
-                console.log("answerFieldIndex")
-                console.log(answerFieldIndex)
-
-
-
-                var rect = textAreaDestination.positionToRectangle(textAreaDestination.cursorPosition)
-                console.log(rect)
-                console.log("2222")
-                answerFieldRect.x = rect.x
-                answerFieldRect.y = rect.y + textAreaDestination.top
-                answerFieldRect.height = rect.height
-                answerFieldRect.width = 100
-                test
-
-            }*/
         }
-
     }
+
 
    /* TextArea {
 
