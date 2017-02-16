@@ -647,8 +647,14 @@ ApplicationWindow {
                 if (currentChoicesElements.goodAnswers.indexOf(currentChoicesElements.userAnswer) != -1)
                 {
                     textAreaDestination.remove(currentChoicesElements.posInText,currentChoicesElements.posInText+currentChoicesElements.question.length)
+                    textAreaDestination.insert(currentChoicesElements.posInText,"<font color=\"green\">" + currentChoicesElements.userAnswer +  "</font>")
+                }
+                else
+                {
+                    textAreaDestination.remove(currentChoicesElements.posInText,currentChoicesElements.posInText+currentChoicesElements.question.length)
                     textAreaDestination.insert(currentChoicesElements.posInText,"<font color=\"red\">" + currentChoicesElements.userAnswer +  "</font>")
                 }
+
 
             }
 
