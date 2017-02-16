@@ -22,6 +22,7 @@
         <file>qml/images/zoomin.png</file>
         <file>qml/images/zoomout.png</file>
         <file>qml/images/createmultianswerchoices.png</file>
+        <file>qml/images/ok.png</file>        
         <file>example.html</file>
         <file>qml/images/qt-logo.png</file>
         <file>qml/texteditor.js</file>        

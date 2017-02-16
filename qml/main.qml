@@ -219,6 +219,15 @@ ApplicationWindow {
         }
     }
 
+    Action {
+        id: createCheckAnswers
+        text: "c&reate multiple answer"
+        iconSource: "images/ok.png"
+        iconName: "xxx"
+        onTriggered: {
+            textAreaDestination.checkAnswers()
+        }
+    }
 
 
     FileDialog {
@@ -354,6 +363,8 @@ ApplicationWindow {
 
             ToolButton { action: createWikiAnswerChoices }
 
+            ToolButton { action: createCheckAnswers }
+
             Item { Layout.fillWidth: true }
         }
     }
@@ -399,7 +410,6 @@ ApplicationWindow {
         property variant multiAnswersStrArray: []
         property variant multiAnswersStrArrayIndex: 0
 
-
         frameVisible: true
         width: parent.width
         height: parent.height/2
@@ -414,87 +424,10 @@ ApplicationWindow {
             errorMessage.text = cursorPosition
         }
 
-
         onTextChanged: {
-            console.log("eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee")
             textAreaDestination.text = textArea.text
             textAreaDestination.prepareAnswerFields()
         }
-
-
-
-        //remove(int start, int end)
-
-
-     //   textAreaDestination.remove(openingBracketPosition,closingBracketPosition+1)
-     //   textAreaDestination.insert(openingBracketPosition, "[....] ")
-     //     textAreaDestination.select(openingBracketPosition,closingBracketPosition+1)
-
-
-    /*    onCursorPositionChanged: {
-
-            function searchMultipleAnswerFieldStart(cursorPosition) {
-                for (var i = cursorPosition; i >= 0; i--) {
-                    var oneTextChar = textArea.getText(i,i+1)
-                    if (oneTextChar == "]") {
-                        return -1
-                    }
-                    if (oneTextChar == "[") {
-                        multiAnswerFieldStartPos = i
-                        console.log("test:" + multiAnswerFieldStartPos)
-                        return multiAnswerFieldStartPos
-                    }
-                }
-                return -1
-            }
-
-            function searchMultipleAnswerFieldEnd(cursorPosition) {
-                for (var i = cursorPosition; i < textArea.length-2; i++) {
-                    var oneTextChar = textArea.getText(i,i+1)
-                    if (oneTextChar == "[") {
-                        return -1
-                    }
-                    if (oneTextChar == "]") {
-                        multiAnswerFieldEndPos = i
-                        console.log("found ] pos " + i)
-                        return multiAnswerFieldEndPos
-                    }
-                }
-                return -1
-            }
-
-            var multiAnswerFieldStartPos = -1
-            var multiAnswerFieldEndPos = -1
-
-            multiAnswerFieldStartPos = searchMultipleAnswerFieldStart(textArea.cursorPosition)
-            multiAnswerFieldEndPos = searchMultipleAnswerFieldEnd(textArea.cursorPosition)
-
-            //if the user clicked outside of brackets, escape the action
-            if (multiAnswerFieldStartPos == -1 || multiAnswerFieldEndPos == -1) {
-                return
-            }
-
-            // if the user clicked inside brackets append the text
-            textArea.select(multiAnswerFieldStartPos,multiAnswerFieldEndPos+1)
-            //display multiple choices under the text
-            var rect = textArea.positionToRectangle(textArea.selectionStart)
-            console.log(rect)
-            answerFieldRect.x = rect.x - rect.width
-            answerFieldRect.y = rect.y + toolBar.height + rect.height
-            answerFieldRect.height = rect.height
-            answerFieldRect.width = 100
-        //    var choicesStr = textArea.selectedText
-        //    choicesStr = choicesStr.replace("[","")
-        //    choicesStr = choicesStr.replace("]","")
-        //    var choicesArray = choicesStr.split("|")
-        //    console.log("choicesArray")
-        //    console.log(choicesArray)
-          //  answerChoices.answerChoicesRepeaterGrid.answerChoicesRepeater.model = choicesArray
-       //     multiAnswersStrArray[multiAnswersStrArrayIndex] = choicesArray
-       //     multiAnswersStrArrayIndex++
-       ///     console.log("-------------------multiAnswersStrArrayIndex: " + multiAnswersStrArrayIndex)
-
-        }*/
 
     }
 
@@ -502,35 +435,48 @@ ApplicationWindow {
     Item {
         id: answerChoices
 
-        property alias answerChoicesRepeaterGrid: answerChoicesRepeaterGrid
+        property var answerChoicesIndex
+
+        z: 100
 
         Grid {
-            id: answerChoicesRepeaterGrid
-
-            property alias answerChoicesRepeater: answerChoicesRepeater
+            id: answerChoicesGrid
 
             columns: 1
             spacing: 2
 
             Repeater {
-                id: answerChoicesRepeater
+                id: answerChoicesGridRepeater
 
                 Rectangle {
                     id: answerFieldRect
-                    x: 10
-                    y: 10
-                    width: 80
-                    height: 50
+                    width: answerChoicesText.width + 10
+                    height: answerChoicesText.height + 10
                     color: "red"
 
                     Text {
-                        id: displayAnswer
+                        id: answerChoicesText
 
                         text: modelData
-                        y: 30
                         anchors.horizontalCenter: answerFieldRect.horizontalCenter
                         anchors.verticalCenter: answerFieldRect.verticalCenter
                         font.pointSize: 12
+                    }
+
+                    MouseArea {
+
+                        width: parent.width
+                        height: parent.height
+                        onClicked: {
+                          console.log("test index " + answerChoices.answerChoicesIndex)
+                          console.log("textAreaDestination.multipleChoicesElementsArray[index].question :" + textAreaDestination.multipleChoicesElementsArray[answerChoices.answerChoicesIndex].question)
+                          console.log("textAreaDestination.multipleChoicesElementsArray[index].goodAnswers :" + textAreaDestination.multipleChoicesElementsArray[answerChoices.answerChoicesIndex].goodAnswers)
+
+                          textAreaDestination.multipleChoicesElementsArray[answerChoices.answerChoicesIndex].userAnswer = modelData
+
+                          console.log("////*****" + textAreaDestination.multipleChoicesElementsArray[answerChoices.answerChoicesIndex].userAnswer)
+
+                        }
                     }
                 }
             }
@@ -542,45 +488,6 @@ ApplicationWindow {
         id: textAreaDestination
 
         property var multipleChoicesElementsArray : []
-
-
-        function colorBracketContent() {
-
-            var openingBracketPos = 0
-            var closingBracketPos = 0
-            var bracketOpened = false
-
-            for (var i = 0; i < (textArea.length)-2; i++) {
-                var oneTextChar = textArea.getText(i,i+1)
-
-                //console.log("origine: " + oneTextChar)
-
-                if (oneTextChar == "[" && bracketOpened == true) {
-                    errorMessage.text = "Two opening brackets ([) can not follow each other"
-                }
-
-                if (oneTextChar == "[") {
-                    openingBracketPos = i
-                    bracketOpened = true
-                }
-
-
-                if (bracketOpened == true && oneTextChar == "]") {
-                    closingBracketPos = i
-
-                    bracketOpened = false
-                    console.log("openingBracketPosition: " + openingBracketPos)
-                    console.log("closingBracketPosition: " + closingBracketPos)
-
-                    document.selectionStart = openingBracketPos
-                    document.selectionEnd = closingBracketPos+1
-                    document.cursorPosition = openingBracketPos
-                    document.textColor = "blue"
-
-
-                }
-            }
-        }
 
 
         function prepareAnswerFields() {
@@ -642,7 +549,7 @@ ApplicationWindow {
                             console.log("+-+-+------"+multipleChoiceElementStrArray[j])
                             if (multipleChoiceElementStrArray[j][multipleChoiceElementStrArray[j].length-1] == "*") {
                                 multipleChoiceElementStrArray[j] = multipleChoiceElementStrArray[j].substr(0,multipleChoiceElementStrArray[j].length-1)
-                                goodAnswersArray.push(multipleChoiceElementStrArray[j])
+                                goodAnswersArray.push(multipleChoiceElementStrArray[j])                                
                             }
                             else {
                                 badAnswersArray.push(multipleChoiceElementStrArray[j])
@@ -650,8 +557,9 @@ ApplicationWindow {
                         }
                     }
 
+                    var goodAnwerVar = []
                     //store the for each question, its position, its good and bad answers
-                    var multipleChoiceElement = {posInText:0, question:questionStr, questionLength:0, goodAnswers:goodAnswersArray, badAnswers:badAnswersArray}
+                    var multipleChoiceElement = {posInText:0, question:"", questionLength:0, goodAnswers:[], badAnswers:[], userAnswer:""}
                     multipleChoiceElement.posInText = openingBracketPosInDestTextArea
                     multipleChoiceElement.question = questionStr
                     var questionLength = questionStr.length
@@ -659,9 +567,6 @@ ApplicationWindow {
                     multipleChoiceElement.goodAnswers = goodAnswersArray
                     multipleChoiceElement.badAnswers = badAnswersArray
                     multipleChoicesElementsArray.push(multipleChoiceElement)
-
-                    console.log("***************** push element no " + indexTest)
-                    indexTest = indexTest +1
 
                     console.log("--- multipleChoiceElement.question: " + multipleChoiceElement.question)
                     console.log("--- multipleChoiceElement.goodAnswers: " + multipleChoiceElement.goodAnswers)
@@ -684,7 +589,7 @@ ApplicationWindow {
             }
 
 
-            //display the multiple choices answerFields
+/*            //display the multiple choices answerFields
             for (var i = 0; i < multipleChoicesElementsArray.length; i++) {
                 console.log("--- multipleChoicesElementsArray posInText: " + multipleChoicesElementsArray[i].posInText)
                 console.log("--- multipleChoicesElementsArray question: " + multipleChoicesElementsArray[i].question)
@@ -695,88 +600,10 @@ ApplicationWindow {
                 console.log(rect)
                 answerChoices.visible = true
 
-            }
+            }*/
         }
 
-
-        function displayAnswerFields() {
-
-            var openingBracketPosition = 0
-            var closingBracketPosition = 0
-            var bracketOpened = false
-
-            console.log("length: ")
-            console.log((textAreaDestination.length)-2)
-
-            for (var i = 0; i < (textAreaDestination.length)-2; i++) {
-                var oneTextChar = textAreaDestination.getText(i,i+1)
-
-                if (oneTextChar == "[") {
-                    openingBracketPosition = i
-                    bracketOpened = true
-                }
-
-                if (bracketOpened == true && oneTextChar == "]") {
-                    closingBracketPosition = i
-                    bracketOpened = false
-                    console.log("openingBracketPosition: " + openingBracketPosition)
-                    console.log("closingBracketPosition: " + closingBracketPosition)
-
-                    console.log("select " + openingBracketPosition + " " + closingBracketPosition)
-                  //  textAreaDestination.select(openingBracketPosition,closingBracketPosition+1)
-                    console.log("remove")
-                  //  textAreaDestination.remove(openingBracketPosition,closingBracketPosition+1)
-                    console.log("insert")
-                  //  textAreaDestination.insert(openingBracketPosition,"[...]")
-                    var diffLengthToSubstract = closingBracketPosition - openingBracketPosition - 5
-                    i = i - diffLengthToSubstract
-                 }
-            }
-        }
-
-        function findWhichAnswerFieldAsBeenClicked(cursorPosition) {
-
-            var openingBracketPosition = 0
-            var closingBracketPosition = 0
-            var bracketOpened = false
-            var answerFieldIndex = 0
-
-            console.log("length: ")
-            console.log((textAreaDestination.length)-2)
-
-            for (var i = 0; i < (textAreaDestination.length)-2; i++) {
-                var oneTextChar = textAreaDestination.getText(i,i+1)
-
-                if (oneTextChar == "[") {
-                    openingBracketPosition = i
-                    bracketOpened = true
-                }
-
-                if (bracketOpened == true && oneTextChar == "]") {
-                    closingBracketPosition = i
-                    bracketOpened = false
-                    console.log("openingBracketPosition: " + openingBracketPosition)
-                    console.log("closingBracketPosition: " + closingBracketPosition)
-                    if (cursorPosition >= openingBracketPosition && cursorPosition <= closingBracketPosition) {
-                        return answerFieldIndex
-                    }
-                    answerFieldIndex++
-                 }
-            }
-            return -1
-        }
-
-
-        frameVisible: false
-        width: parent.width
-        height: parent.height/3
-        anchors.top: textArea.bottom
-        text: "tt" //document.text
-        textFormat: Qt.RichText
-        Component.onCompleted: forceActiveFocus()
-
-        onCursorPositionChanged: {
-
+        function displayAnswerChoices() {
             console.log("il y a ... ekements" + textAreaDestination.multipleChoicesElementsArray.length)
             for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
 
@@ -788,24 +615,19 @@ ApplicationWindow {
                 if (cursorPosition >= wordStartPos && cursorPosition <= wordEndPos) {
 
                     console.log("----detected : cursorPosition: " + cursorPosition + " -- wordStartPos" + wordStartPos + " -- wordEndPos" + wordEndPos + " i: " + i)
-
-                    var rect = textAreaDestination.positionToRectangle(textAreaDestination.selectionStart)
-                    answerChoices.x = rect.x - rect.width
-                    answerChoices.y = rect.y +rect.height + textArea.height + mainToolBar.height
-                    answerChoices.visible = true
-                    /*testRec.x = rect.x - rect.width
-                    console.log(rect.width)
-                    testRec.y = rect.y +rect.height + textArea.height + mainToolBar.height*/
-
                     console.log("----question: " + textAreaDestination.multipleChoicesElementsArray[i].question)
                     console.log("----good answers: " + textAreaDestination.multipleChoicesElementsArray[i].goodAnswers)
                     console.log("----bad answers: " + textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
 
-                    var multipleChoicesArray = []
-                    multipleChoicesArray = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers
-                    multipleChoicesArray.push(textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
+                    var multipleChoicesArray = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers.concat(textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
                     console.log("----multipleChoicesArray: " + multipleChoicesArray)
 
+                    var rect = textAreaDestination.positionToRectangle(wordStartPos)
+                    answerChoicesGridRepeater.model = multipleChoicesArray
+                    answerChoicesGrid.visible = true
+                    answerChoicesGrid.x = rect.x - rect.width
+                    answerChoicesGrid.y = rect.y + rect.height + textArea.height + mainToolBar.height
+                    answerChoices.answerChoicesIndex = i
 
                     console.log(rect.y)
                     console.log(textArea.height)
@@ -813,44 +635,60 @@ ApplicationWindow {
                     console.log(mainToolBar.height)
 
                  }
+            }
+        }
+
+        function checkAnswers() {
+            for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
+                var currentChoicesElements = textAreaDestination.multipleChoicesElementsArray[2]
+
+                console.log("currentChoicesElements question  " + currentChoicesElements.question)
+                console.log("currentChoicesElements userAnswer " + currentChoicesElements.userAnswer)
+                if (currentChoicesElements.goodAnswers.indexOf(currentChoicesElements.userAnswer) != -1)
+                {
+                    textAreaDestination.remove(currentChoicesElements.posInText,currentChoicesElements.posInText+currentChoicesElements.question.length)
+                    textAreaDestination.insert(currentChoicesElements.posInText,"<font color=\"red\">" + currentChoicesElements.userAnswer +  "</font>")
+                }
 
             }
 
         }
-    }
 
 
-   /* TextArea {
 
-        id: textAreaDebug
-
-        frameVisible: true
+        //frameVisible: false
         width: parent.width
-        height: parent.height/10
-        anchors.top: textAreaDestination.bottom
-    }*/
+        height: parent.height/3
+        anchors.top: textArea.bottom
+        text: "tt" //document.text
+        textFormat: Qt.RichText
+        Component.onCompleted: forceActiveFocus()
 
 
-    Rectangle {
-        id: testRec
-        height: 100
-        width: 100
+        flickableItem.onContentYChanged: {
+            console.log("xxxxxx")
+            displayAnswerChoices()
+        }
+
+        onCursorPositionChanged: {
+
+            displayAnswerChoices()
+        }
     }
+
+
+
 
     Text {
         id: errorMessage
 
-
-
-    //    anchors.top: textAreaDestination.bottom
+        //    anchors.top: textAreaDestination.bottom
         anchors.bottom: errorMessage2.top
         height: parent.height/100
     }
 
     Text {
         id: errorMessage2
-
-
 
         anchors.top: errorMessage.bottom
         anchors.bottom: parent.bottom
@@ -866,10 +704,7 @@ ApplicationWindow {
     DocumentHandler {
         id: document
         target: textArea
-      /*  cursorPosition: textArea.cursorPosition
-        selectionStart: textArea.selectionStart
-        selectionEnd: textArea.selectionEnd
-        textColor: colorDialog.color*/
+
         Component.onCompleted: document.fileUrl = "qrc:/example.html"
         onFontSizeChanged: {
             fontSizeSpinBox.valueGuard = false
@@ -896,11 +731,7 @@ ApplicationWindow {
     DocumentHandler {
         id: destDocument
         target: textAreaDestination
-      /*  cursorPosition: textArea.cursorPosition
-        selectionStart: textArea.selectionStart
-        selectionEnd: textArea.selectionEnd
-        textColor: colorDialog.color*/
-        //Component.onCompleted: destDocument.fileUrl = "qrc:/example.html"
+
         onFontSizeChanged: {
             fontSizeSpinBox.valueGuard = false
             fontSizeSpinBox.value = destDocument.fontSize
