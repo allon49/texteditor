@@ -188,8 +188,8 @@ void DocumentHandler::reset()
 QTextCursor DocumentHandler::textCursor() const
 {
     QTextCursor cursor = QTextCursor(m_doc);
-    qDebug() << "selection_start: " << m_selectionStart;
-    qDebug() << "selection_end: " << m_selectionEnd;
+    //qDebug() << "selection_start: " << m_selectionStart;
+    //qDebug() << "selection_end: " << m_selectionEnd;
     if (m_selectionStart != m_selectionEnd) {
         cursor.setPosition(m_selectionStart);
         cursor.setPosition(m_selectionEnd, QTextCursor::KeepAnchor);

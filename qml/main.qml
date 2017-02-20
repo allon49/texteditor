@@ -216,6 +216,7 @@ ApplicationWindow {
         iconName: "xxx"
         onTriggered: {
             textAreaDestination.prepareAnswerFields()
+            textAreaDestination.displayAnswerChoices()
         }
     }
 
@@ -427,6 +428,7 @@ ApplicationWindow {
         onTextChanged: {
             textAreaDestination.text = textArea.text
             textAreaDestination.prepareAnswerFields()
+            textAreaDestination.displayAnswerChoices()
         }
 
     }
@@ -483,12 +485,69 @@ ApplicationWindow {
         }
     }
 
+
+
+    Item {
+     //   id: answerChoicesComboBoxes
+        z: 100
+
+        Repeater {
+            id: answerChoicesComboBoxesRepeater
+
+            ComboBox {
+                id: answerChoicesComboBox
+
+                //width: 200
+                z: 10000
+                x: modelData.posInTextX
+                y: modelData.posInTextY
+                //model: modelData.shuffledPossibleAnswers
+
+            }
+        }
+
+    }
+
+
+
+
     TextArea {
         Accessible.name: "destDocument"
         id: textAreaDestination
 
         property var multipleChoicesElementsArray : []
 
+        function longestStrInArray(arr) {
+            var lgth = 0;
+            var longest = "";
+
+            for(var i=0; i < arr.length; i++){
+                if(arr[i].length > lgth){
+                    var lgth = arr[i].length;
+                    longest = arr[i];
+                }
+            }
+            return longest
+        }
+
+        function shuffle(array) {
+            var currentIndex = array.length, temporaryValue, randomIndex;
+
+            // While there remain elements to shuffle...
+            while (0 !== currentIndex) {
+
+                // Pick a remaining element...
+                randomIndex = Math.floor(Math.random() * currentIndex);
+                currentIndex -= 1;
+
+                // And swap it with the current element.
+                temporaryValue = array[currentIndex];
+                array[currentIndex] = array[randomIndex];
+                array[randomIndex] = temporaryValue;
+            }
+
+            return array;
+        }
 
         function prepareAnswerFields() {
             textAreaDestination.text = textArea.text
@@ -559,13 +618,17 @@ ApplicationWindow {
 
                     var goodAnwerVar = []
                     //store the for each question, its position, its good and bad answers
-                    var multipleChoiceElement = {posInText:0, question:"", questionLength:0, goodAnswers:[], badAnswers:[], userAnswer:""}
+                    var multipleChoiceElement = {posInText:0, posInDestText:0, posInTextX:0, posInTextY:0, question:"", questionLength:0, shuffledPossibleAnswers:[], goodAnswers:[], badAnswers:[], userAnswer:""}
                     multipleChoiceElement.posInText = openingBracketPosInDestTextArea
+
                     multipleChoiceElement.question = questionStr
                     var questionLength = questionStr.length
                     multipleChoiceElement.questionLength = questionLength
                     multipleChoiceElement.goodAnswers = goodAnswersArray
                     multipleChoiceElement.badAnswers = badAnswersArray
+                    multipleChoiceElement.shuffledPossibleAnswers = shuffle(goodAnswersArray.concat(badAnswersArray))
+
+
                     multipleChoicesElementsArray.push(multipleChoiceElement)
 
                     console.log("--- multipleChoiceElement.question: " + multipleChoiceElement.question)
@@ -584,7 +647,7 @@ ApplicationWindow {
                     destDocument.textColor = "blue"
 
                     nbOfCharactersRemoved = nbOfCharactersRemoved + (closingBracketPos - openingBracketPos - questionLength +1)
-                    console.log("nbOfCharactersRemoved: " + nbOfCharactersRemoved)
+
                 }
             }
 
@@ -604,46 +667,108 @@ ApplicationWindow {
         }
 
         function displayAnswerChoices() {
-            console.log("il y a ... ekements" + textAreaDestination.multipleChoicesElementsArray.length)
+            //console.log("il y a ... ekements" + textAreaDestination.multipleChoicesElementsArray.length)
+            var nbOfChartoAdd=0
             for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
 
-                var wordStartPos = textAreaDestination.multipleChoicesElementsArray[i].posInText
-                var wordEndPos = wordStartPos + textAreaDestination.multipleChoicesElementsArray[i].questionLength
+                var currentMultipleChoicesElements = textAreaDestination.multipleChoicesElementsArray[i]
+                var wordStartPos = currentMultipleChoicesElements.posInText + nbOfChartoAdd
+                var wordEndPos = wordStartPos + currentMultipleChoicesElements.question.length
 
-                console.log("cursorPosition: " + cursorPosition + " -- wordStartPos" + wordStartPos + " -- wordEndPos" + wordEndPos)
+                //console.log("cursorPosition: " + cursorPosition + " -- wordStartPos" + wordStartPos + " -- wordEndPos" + wordEndPos)
 
-                if (cursorPosition >= wordStartPos && cursorPosition <= wordEndPos) {
+                var multipleChoicesArray = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers.concat(textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
+
+
+                //var answerCursorPos = wordStartPos + nbOfChartoAdd
+                //console.log("wordStartPos: " + wordStartPos)
+                //console.log("answerCursorPos: " + answerCursorPos)
+/*                var rect = textAreaDestination.positionToRectangle(answerCursorPos)
+
+
+//                var rect = textAreaDestination.positionToRectangle(openingBracketPosInDestTextArea)
+                textAreaDestination.multipleChoicesElementsArray[i].posInTextX = rect.x// - rect.width
+                console.log("posInTextX: " + rect.x)
+
+                textAreaDestination.multipleChoicesElementsArray[i].posInTextY = rect.y + rect.height + /*textArea.height +*/ mainToolBar.height + appWin.height/3 + 24 -100
+                //console.log("posInTextY: " + textAreaDestination.multipleChoicesElementsArray[i].posInTextY)*/
+
+
+                //make space for the combo box
+                var longestChoiceStr = longestStrInArray(multipleChoicesArray)
+
+
+                //textAreaDestination.font.bold
+                textAreaDestination.cursorPosition = wordStartPos
+                textAreaDestination.multipleChoicesElementsArray[i].posInDestText = wordStartPos
+                var fontFamily = textAreaDestination.font.family
+                //fontFamily = "sans serif"
+                destDocument.cursorPosition = textAreaDestination.cursorPosition
+                destDocument.selectionStart = textAreaDestination.cursorPosition
+                destDocument.selectionEnd = wordEndPos-1
+
+                var fontSize = destDocument.fontSize //textAreaDestination.font.pointSize
+                //fontSize = 100
+                console.log("***++++++++++++++++++currentPosition: " + textAreaDestination.cursorPosition)
+                console.log("***++++++++++++++++++fontFamily: " + fontFamily)
+                console.log("***++++++++++++++++++fontSize: " + fontSize)
+                //var answerStr = "<font face=\"" + fontFamily + "\" color=\"green\" sikze=\"" + fontSize + "\">" + longestChoiceStr + "</font>"
+
+                var answerStr = "<span style=\" font-size:" + fontSize + "pt; /*font-weight:400*/;\">" + longestChoiceStr + "</span>"
+
+                textAreaDestination.insert(wordEndPos, answerStr)
+                nbOfChartoAdd = nbOfChartoAdd + longestChoiceStr.length
+
+                /*cursorPosition = cursorPosition + 10
+                textAreaDestination.selectWord()*/
+
+
+             /*   if (cursorPosition >= wordStartPos && cursorPosition <= wordEndPos) {
 
                     console.log("----detected : cursorPosition: " + cursorPosition + " -- wordStartPos" + wordStartPos + " -- wordEndPos" + wordEndPos + " i: " + i)
                     console.log("----question: " + textAreaDestination.multipleChoicesElementsArray[i].question)
                     console.log("----good answers: " + textAreaDestination.multipleChoicesElementsArray[i].goodAnswers)
                     console.log("----bad answers: " + textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
 
-                    var multipleChoicesArray = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers.concat(textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
+                 //   var multipleChoicesArray = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers.concat(textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
                     console.log("----multipleChoicesArray: " + multipleChoicesArray)
 
-                    var rect = textAreaDestination.positionToRectangle(wordStartPos)
+                    //var rect = textAreaDestination.positionToRectangle(wordStartPos)
                     answerChoicesGridRepeater.model = multipleChoicesArray
                     answerChoicesGrid.visible = true
                     answerChoicesGrid.x = rect.x - rect.width
                     answerChoicesGrid.y = rect.y + rect.height + textArea.height + mainToolBar.height
                     answerChoices.answerChoicesIndex = i
 
+                    answerChoicesComboBox.visible = true
+                    answerChoicesComboBox.x = rect.x - rect.width
+                    answerChoicesComboBox.y = rect.y + rect.height + textArea.height + mainToolBar.height
+                    answerChoicesComboBox.model = multipleChoicesArray
+                    //answerChoices.answerChoicesIndex = i
+
+
                     console.log(rect.y)
                     console.log(textArea.height)
                     console.log(rect.y + textArea.height + mainToolBar.height)
                     console.log(mainToolBar.height)
 
-                 }
+                 }*/
             }
+
+
+
+
+            //answerChoicesComboBoxes.visible = true
+            //answerChoicesComboBoxesRepeater.model = textAreaDestination.multipleChoicesElementsArray
+
         }
 
         function checkAnswers() {
             for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
                 var currentChoicesElements = textAreaDestination.multipleChoicesElementsArray[2]
 
-                console.log("currentChoicesElements question  " + currentChoicesElements.question)
-                console.log("currentChoicesElements userAnswer " + currentChoicesElements.userAnswer)
+                //console.log("currentChoicesElements question  " + currentChoicesElements.question)
+                //console.log("currentChoicesElements userAnswer " + currentChoicesElements.userAnswer)
                 if (currentChoicesElements.goodAnswers.indexOf(currentChoicesElements.userAnswer) != -1)
                 {
                     textAreaDestination.remove(currentChoicesElements.posInText,currentChoicesElements.posInText+currentChoicesElements.question.length)
@@ -666,19 +791,51 @@ ApplicationWindow {
         width: parent.width
         height: parent.height/3
         anchors.top: textArea.bottom
-        text: "tt" //document.text
+        text: document.text
         textFormat: Qt.RichText
         Component.onCompleted: forceActiveFocus()
 
 
-        flickableItem.onContentYChanged: {
+      /*  flickableItem.onContentYChanged: {
             console.log("xxxxxx")
             displayAnswerChoices()
-        }
+        }*/
 
         onCursorPositionChanged: {
 
-            displayAnswerChoices()
+            //textAreaDestination.selectWord()
+            var fontFamily = textAreaDestination.font.family
+            //fontFamily = "sens serif"
+            var fontSize = textAreaDestination.font.pointSize
+            //fontSize = 100
+           // console.log("++++++++++++++++++fontFamily: " + fontFamily)
+           // console.log("++++++++++++++++++fontSize: " + fontSize)
+
+
+
+           /* for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
+
+                var currentMultipleChoicesElements = textAreaDestination.multipleChoicesElementsArray[i]
+                var tmp3 = currentMultipleChoicesElements.posInDestText
+                console.log("kkkkkkkk " + i + " :" + tmp3)
+
+
+                var rect = textAreaDestination.positionToRectangle(tmp3)
+                console.log("xxxxxxxxxxx " + i + " :" + rect.x)
+                console.log("yyyyyyyyyyy " + i + " :" + rect.y)
+//                var rect = textAreaDestination.positionToRectangle(openingBracketPosInDestTextArea)
+                textAreaDestination.multipleChoicesElementsArray[i].posInTextX = rect.x// - rect.width
+                console.log("posInTextX: " + rect.x)
+
+                textAreaDestination.multipleChoicesElementsArray[i].posInTextY = rect.y + rect.height //+ / //mainToolBar.height + appWin.height/3 + 24 -100
+           //     console.log("posInTextY: " + textAreaDestination.multipleChoicesElementsArray[i].posInTextY)
+
+
+
+
+            }*/
+//            var rect2 = textAreaDestination.positionToRectangle(cursorPosition)
+//            errorMessage.text = cursorPosition + "--: " + rect2.x
         }
     }
 
@@ -710,7 +867,10 @@ ApplicationWindow {
     DocumentHandler {
         id: document
         target: textArea
-
+        cursorPosition: textArea.cursorPosition
+        selectionStart: textArea.selectionStart
+        selectionEnd: textArea.selectionEnd
+        textColor: colorDialog.color
         Component.onCompleted: document.fileUrl = "qrc:/example.html"
         onFontSizeChanged: {
             fontSizeSpinBox.valueGuard = false
@@ -737,13 +897,19 @@ ApplicationWindow {
     DocumentHandler {
         id: destDocument
         target: textAreaDestination
-
+        cursorPosition: textAreaDestination.cursorPosition
+        selectionStart: textAreaDestination.selectionStart
+        selectionEnd: textAreaDestination.selectionEnd
+        textColor: colorDialog.color
+        //Component.onCompleted: document.fileUrl = "qrc:/example.html"
         onFontSizeChanged: {
             fontSizeSpinBox.valueGuard = false
             fontSizeSpinBox.value = destDocument.fontSize
+            console.log("fontSize changed: " + destDocument.fontSize)
             fontSizeSpinBox.valueGuard = true
         }
         onFontFamilyChanged: {
+            console.log("fontFamily changed: " + destDocument.fontFamily)
             var index = Qt.fontFamilies().indexOf(destDocument.fontFamily)
             if (index == -1) {
                 fontFamilyComboBox.currentIndex = 0
