@@ -84,6 +84,7 @@ class DocumentHandler : public QObject
     Q_PROPERTY(int fontSize READ fontSize WRITE setFontSize NOTIFY fontSizeChanged)
 
     Q_PROPERTY(QStringList defaultFontSizes READ defaultFontSizes NOTIFY defaultFontSizesChanged)
+    Q_PROPERTY(qreal stringWidth READ stringWidth NOTIFY stringWidthChanged)
 
     Q_PROPERTY(QUrl fileUrl READ fileUrl WRITE setFileUrl NOTIFY fileUrlChanged)
     Q_PROPERTY(QString text READ text WRITE setText NOTIFY textChanged)
@@ -105,6 +106,7 @@ public:
     int selectionEnd() const { return m_selectionEnd; }
 
     QString fontFamily() const;
+    qreal stringWidth();
 
 
     QColor textColor() const;
@@ -154,6 +156,7 @@ Q_SIGNALS:
     void underlineChanged();
 
     void fontSizeChanged();
+    void stringWidthChanged();
     void defaultFontSizesChanged();
 
     void fileUrlChanged();

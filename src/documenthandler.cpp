@@ -53,6 +53,8 @@
 #include <QtGui/QTextDocument>
 #include <QtGui/QTextCursor>
 #include <QtGui/QFontDatabase>
+#include <QtGui/QFontMetricsF>
+
 #include <QtCore/QFileInfo>
 
 DocumentHandler::DocumentHandler()
@@ -343,6 +345,19 @@ void DocumentHandler::setFontFamily(const QString &arg)
     format.setFontFamily(arg);
     mergeFormatOnWordOrSelection(format);
     emit fontFamilyChanged();
+}
+
+qreal DocumentHandler::stringWidth()
+{
+    QTextCursor cursor = textCursor();
+    if (cursor.isNull())
+        return 0;
+    QTextCharFormat format = cursor.charFormat();
+    QFont font(format.font().family(), format.font().pointSize());
+    QFontMetricsF fm(font);
+    cursor.select(QTextCursor::WordUnderCursor);
+    qDebug() << "selected text: " << cursor.selectedText();
+    return fm.width(cursor.selectedText());
 }
 
 QStringList DocumentHandler::defaultFontSizes() const

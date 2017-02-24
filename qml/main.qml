@@ -54,6 +54,8 @@ import QtQuick.Layouts 1.0
 import QtQuick.Dialogs 1.1
 import QtQuick.Window 2.1
 import org.qtproject.example 1.0
+import QtQuick.Controls.Styles 1.4
+import QtQuick.Controls.Private 1.0
 
 //import "texteditor.js" as Activity
 
@@ -401,9 +403,6 @@ ApplicationWindow {
 
 
 
-
-
-
     TextArea {
         Accessible.name: "document"
         id: textArea
@@ -432,84 +431,6 @@ ApplicationWindow {
         }
 
     }
-
-
-    Item {
-        id: answerChoices
-
-        property var answerChoicesIndex
-
-        z: 100
-
-        Grid {
-            id: answerChoicesGrid
-
-            columns: 1
-            spacing: 2
-
-            Repeater {
-                id: answerChoicesGridRepeater
-
-                Rectangle {
-                    id: answerFieldRect
-                    width: answerChoicesText.width + 10
-                    height: answerChoicesText.height + 10
-                    color: "red"
-
-                    Text {
-                        id: answerChoicesText
-
-                        text: modelData
-                        anchors.horizontalCenter: answerFieldRect.horizontalCenter
-                        anchors.verticalCenter: answerFieldRect.verticalCenter
-                        font.pointSize: 12
-                    }
-
-                    MouseArea {
-
-                        width: parent.width
-                        height: parent.height
-                        onClicked: {
-                          console.log("test index " + answerChoices.answerChoicesIndex)
-                          console.log("textAreaDestination.multipleChoicesElementsArray[index].question :" + textAreaDestination.multipleChoicesElementsArray[answerChoices.answerChoicesIndex].question)
-                          console.log("textAreaDestination.multipleChoicesElementsArray[index].goodAnswers :" + textAreaDestination.multipleChoicesElementsArray[answerChoices.answerChoicesIndex].goodAnswers)
-
-                          textAreaDestination.multipleChoicesElementsArray[answerChoices.answerChoicesIndex].userAnswer = modelData
-
-                          console.log("////*****" + textAreaDestination.multipleChoicesElementsArray[answerChoices.answerChoicesIndex].userAnswer)
-
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-
-
-    Item {
-     //   id: answerChoicesComboBoxes
-        z: 100
-
-        Repeater {
-            id: answerChoicesComboBoxesRepeater
-
-            ComboBox {
-                id: answerChoicesComboBox
-
-                //width: 200
-                z: 10000
-                x: modelData.posInTextX
-                y: modelData.posInTextY
-                //model: modelData.shuffledPossibleAnswers
-
-            }
-        }
-
-    }
-
-
-
 
     TextArea {
         Accessible.name: "destDocument"
@@ -618,7 +539,7 @@ ApplicationWindow {
 
                     var goodAnwerVar = []
                     //store the for each question, its position, its good and bad answers
-                    var multipleChoiceElement = {posInText:0, posInDestText:0, posInTextX:0, posInTextY:0, question:"", questionLength:0, shuffledPossibleAnswers:[], goodAnswers:[], badAnswers:[], userAnswer:""}
+                    var multipleChoiceElement = {posInText:0, posInDestText:0, posInDestTextX:0, posInDestTextY:0, comboboxWidth:0, answerFontFamily:"", answerFontSize:0, question:"", questionLength:0, shuffledPossibleAnswers:[], goodAnswers:[], badAnswers:[], userAnswer:""}
                     multipleChoiceElement.posInText = openingBracketPosInDestTextArea
 
                     multipleChoiceElement.question = questionStr
@@ -671,13 +592,49 @@ ApplicationWindow {
             var nbOfChartoAdd=0
             for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
 
+                //create character spaces for the combo box
+
+                //prepare the positions of the questions after multichoice space has been added (nbOfChartoAdd)
                 var currentMultipleChoicesElements = textAreaDestination.multipleChoicesElementsArray[i]
                 var wordStartPos = currentMultipleChoicesElements.posInText + nbOfChartoAdd
-                var wordEndPos = wordStartPos + currentMultipleChoicesElements.question.length
+                var wordEndPos = wordStartPos + currentMultipleChoicesElements.question.length-1
 
-                //console.log("cursorPosition: " + cursorPosition + " -- wordStartPos" + wordStartPos + " -- wordEndPos" + wordEndPos)
-
+                //prepare an array containing all the possible answers
                 var multipleChoicesArray = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers.concat(textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
+
+                //read and store the question characters family and size
+                destDocument.cursorPosition = wordStartPos
+                destDocument.selectionStart = wordStartPos
+                destDocument.selectionEnd = wordEndPos
+                var fontSize = destDocument.fontSize
+                textAreaDestination.multipleChoicesElementsArray[i].answerFontSize = fontSize
+                var fontFamily = destDocument.fontFamily
+                textAreaDestination.multipleChoicesElementsArray[i].answerFontFamily = fontFamily
+
+                //find what is the longest choice in choicesArray and insert it in the text to prepare the place for the ComboBox
+                var longestChoiceStr = longestStrInArray(multipleChoicesArray)
+                var longestChoiceStrWithOneSpace = " " + longestChoiceStr + "   "
+                var answerStr = "<span style=\" white-space:normal; font-size:%1pt;\"><pre>%2</pre></span>".arg(fontSize).arg(longestChoiceStrWithOneSpace)
+                var choiceStrPosition = wordEndPos+1
+                textAreaDestination.insert(choiceStrPosition, answerStr)
+
+                //prepare nbOfChartoAdd to take in account how many characters have been added
+                nbOfChartoAdd = nbOfChartoAdd + longestChoiceStrWithOneSpace.length
+
+                //store the multiple choices answers positions in array to be used in model
+                var rect = textAreaDestination.positionToRectangle(choiceStrPosition+1)
+                console.log("choice: %1 - x: %2 y: %3".arg(i).arg(rect.x).arg(rect.y))
+                textAreaDestination.multipleChoicesElementsArray[i].posInDestTextX = rect.x
+                textAreaDestination.multipleChoicesElementsArray[i].posInDestTextY = rect.y
+
+                //calculate choices answers width to set combobox width
+                destDocument.cursorPosition = choiceStrPosition+3
+                destDocument.selectionStart = choiceStrPosition +3
+                destDocument.selectionEnd = choiceStrPosition+4
+                var stringWidth = destDocument.stringWidth
+                console.log("text size inpixel: "+ stringWidth)
+                textAreaDestination.multipleChoicesElementsArray[i].comboboxWidth = stringWidth
+
 
 
                 //var answerCursorPos = wordStartPos + nbOfChartoAdd
@@ -690,37 +647,10 @@ ApplicationWindow {
                 textAreaDestination.multipleChoicesElementsArray[i].posInTextX = rect.x// - rect.width
                 console.log("posInTextX: " + rect.x)
 
-                textAreaDestination.multipleChoicesElementsArray[i].posInTextY = rect.y + rect.height + /*textArea.height +*/ mainToolBar.height + appWin.height/3 + 24 -100
+                textAreaDestination.multipleChoicesElementsArray[i].posInTextY = rect.y + rect.height + textArea.height + mainToolBar.height + appWin.height/3 + 24 -100
                 //console.log("posInTextY: " + textAreaDestination.multipleChoicesElementsArray[i].posInTextY)*/
 
 
-                //make space for the combo box
-                var longestChoiceStr = longestStrInArray(multipleChoicesArray)
-
-
-                //textAreaDestination.font.bold
-                textAreaDestination.cursorPosition = wordStartPos
-                textAreaDestination.multipleChoicesElementsArray[i].posInDestText = wordStartPos
-                var fontFamily = textAreaDestination.font.family
-                //fontFamily = "sans serif"
-                destDocument.cursorPosition = textAreaDestination.cursorPosition
-                destDocument.selectionStart = textAreaDestination.cursorPosition
-                destDocument.selectionEnd = wordEndPos-1
-
-                var fontSize = destDocument.fontSize //textAreaDestination.font.pointSize
-                //fontSize = 100
-                console.log("***++++++++++++++++++currentPosition: " + textAreaDestination.cursorPosition)
-                console.log("***++++++++++++++++++fontFamily: " + fontFamily)
-                console.log("***++++++++++++++++++fontSize: " + fontSize)
-                //var answerStr = "<font face=\"" + fontFamily + "\" color=\"green\" sikze=\"" + fontSize + "\">" + longestChoiceStr + "</font>"
-
-                var answerStr = "<span style=\" font-size:" + fontSize + "pt; /*font-weight:400*/;\">" + longestChoiceStr + "</span>"
-
-                textAreaDestination.insert(wordEndPos, answerStr)
-                nbOfChartoAdd = nbOfChartoAdd + longestChoiceStr.length
-
-                /*cursorPosition = cursorPosition + 10
-                textAreaDestination.selectWord()*/
 
 
              /*   if (cursorPosition >= wordStartPos && cursorPosition <= wordEndPos) {
@@ -758,8 +688,8 @@ ApplicationWindow {
 
 
 
-            //answerChoicesComboBoxes.visible = true
-            //answerChoicesComboBoxesRepeater.model = textAreaDestination.multipleChoicesElementsArray
+            answerChoicesComboBoxes.visible = true
+            answerChoicesComboBoxesRepeater.model = textAreaDestination.multipleChoicesElementsArray
 
         }
 
@@ -801,6 +731,10 @@ ApplicationWindow {
             displayAnswerChoices()
         }*/
 
+        onWidthChanged: {
+            textAreaDestination.displayAnswerChoices()
+        }
+
         onCursorPositionChanged: {
 
             //textAreaDestination.selectWord()
@@ -836,6 +770,124 @@ ApplicationWindow {
             }*/
 //            var rect2 = textAreaDestination.positionToRectangle(cursorPosition)
 //            errorMessage.text = cursorPosition + "--: " + rect2.x
+        }
+
+
+
+
+
+        Item {
+            id: answerChoicesComboBoxes
+
+            anchors.top: textAreaDestination.top
+            anchors.left: textAreaDestination.left
+
+            z: 100
+
+            Repeater {
+                id: answerChoicesComboBoxesRepeater
+
+                anchors.top: textAreaDestination.top
+                anchors.left: textAreaDestination.left
+
+               /* ComboBox {
+                    id: answerChoicesComboBox
+
+                    anchors.top: textAreaDestination.top
+                    anchors.left: textAreaDestination.left
+                    width: modelData.comboboxWidth
+                    height: 20
+                    z: 10000
+                    x: modelData.posInDestTextX
+                    y: modelData.posInDestTextY
+                    model: modelData.shuffledPossibleAnswers
+                }*/
+
+                ComboBox {
+                    id: box
+                    currentIndex: 2
+                    activeFocusOnPress: true
+                    style: ComboBoxStyle {
+                        id: comboBox
+                        background: Rectangle {
+                            id: rectCategory
+                            radius: 5
+                            border.width: 2
+                            color: "#fff"
+                        }
+                        label: Text {
+                            verticalAlignment: Text.AlignVCenter
+                            horizontalAlignment: Text.AlignHCenter
+                            font.pointSize: modelData.answerFontSize
+                            font.family: modelData.answerFontFamily
+                            font.capitalization: Font.SmallCaps
+                            color: "black"
+                            text: control.currentText
+                        }
+
+                        // drop-down customization here
+                        property Component __dropDownStyle: MenuStyle {
+                            __maxPopupHeight: 600
+                            __menuItemType: "comboboxitem"
+
+                            frame: Rectangle {              // background
+                                color: "#fff"
+                                border.width: 2
+                                radius: 5
+                            }
+
+                            itemDelegate.label:             // an item text
+                                Text {
+                                verticalAlignment: Text.AlignVCenter
+                                horizontalAlignment: Text.AlignHCenter
+                                font.pointSize: 15
+                                font.family: "Courier"
+                                font.capitalization: Font.SmallCaps
+                                color: styleData.selected ? "white" : "black"
+                                text: styleData.text
+                            }
+
+                            itemDelegate.background: Rectangle {  // selection of an item
+                                radius: 2
+                                color: styleData.selected ? "darkGray" : "transparent"
+                            }
+
+                            __scrollerStyle: ScrollViewStyle { }
+                        }
+
+                        property Component __popupStyle: Style {
+                            property int __maxPopupHeight: 400
+                            property int submenuOverlap: 0
+
+                            property Component frame: Rectangle {
+                                width: (parent ? parent.contentWidth : 0)
+                                height: (parent ? parent.contentHeight : 0)// + 1
+                                border.color: "black"
+                                property real maxHeight: 500
+                                property int margin: 1
+                            }
+
+                            property Component menuItemPanel: Text {
+                                text: "NOT IMPLEMENTED"
+                                color: "red"
+                                font {
+                                    pixelSize: 14
+                                    bold: true
+                                }
+                            }
+
+                            property Component __scrollerStyle: null
+                        }
+                    }
+
+                    model: modelData.shuffledPossibleAnswers
+                    width: modelData.comboboxWidth
+                    z: 10000
+                    x: modelData.posInDestTextX
+                    y: modelData.posInDestTextY-4
+
+                }
+            }
         }
     }
 
