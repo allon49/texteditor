@@ -436,7 +436,13 @@ ApplicationWindow {
         Accessible.name: "destDocument"
         id: textAreaDestination
 
+        Component.onCompleted: {
+            displayAnswerMarks = false
+
+        }
+
         property var multipleChoicesElementsArray : []
+        property var displayAnswerMarks : Boolean
 
         function longestStrInArray(arr) {
             var lgth = 0;
@@ -611,15 +617,38 @@ ApplicationWindow {
                 var fontFamily = destDocument.fontFamily
                 textAreaDestination.multipleChoicesElementsArray[i].answerFontFamily = fontFamily
 
+                //check if the answer is correct or not and assign a tick or a cross to the answer mark accordingly
+                var answerMark = "&#10004;"
+                var answerMark = "&#10060;"
+
+
+
                 //find what is the longest choice in choicesArray and insert it in the text to prepare the place for the ComboBox
                 var longestChoiceStr = longestStrInArray(multipleChoicesArray)
-                var longestChoiceStrWithOneSpace = " " + longestChoiceStr + "   "
-                var answerStr = "<span style=\" white-space:normal; font-size:%1pt;\"><pre>%2</pre></span>".arg(fontSize).arg(longestChoiceStrWithOneSpace)
+                //var longestChoiceStrWithOneSpace = " " + longestChoiceStr + "   "
+                //var longestChoiceStrWithOneSpace = " " + longestChoiceStr + " &#10004; "
+                //var longestChoiceStrWithOneSpace = " " + longestChoiceStr + "  b"
+                //var longestChoiceStrWithOneSpace = " " + longestChoiceStr + " ab"
+                var longestChoiceStrWithOneSpace
+                if (displayAnswerMarks == false) {
+                    longestChoiceStrWithOneSpace = " " + longestChoiceStr + " "
+                }
+                else
+                {
+                    longestChoiceStrWithOneSpace = " " + longestChoiceStr + " &#10060;"
+                }
+
+                var answerStr = "<span style=\"color:red; font-size:%1pt;\"><pre>%2</pre></span>".arg(fontSize).arg(longestChoiceStrWithOneSpace)
                 var choiceStrPosition = wordEndPos+1
                 textAreaDestination.insert(choiceStrPosition, answerStr)
 
                 //prepare nbOfChartoAdd to take in account how many characters have been added
-                nbOfChartoAdd = nbOfChartoAdd + longestChoiceStrWithOneSpace.length
+                if (displayAnswerMarks == false) {
+                    nbOfChartoAdd = nbOfChartoAdd + longestChoiceStrWithOneSpace.length
+                }
+                else {
+                    nbOfChartoAdd = nbOfChartoAdd + longestChoiceStrWithOneSpace.length-7   //7 because it takes 8 characters to write a unicode character
+                }
 
                 //store the multiple choices answers positions in array to be used in model
                 var rect = textAreaDestination.positionToRectangle(choiceStrPosition+1)
@@ -635,66 +664,21 @@ ApplicationWindow {
                 console.log("text size inpixel: "+ stringWidth)
                 textAreaDestination.multipleChoicesElementsArray[i].comboboxWidth = stringWidth
 
-
-
-                //var answerCursorPos = wordStartPos + nbOfChartoAdd
-                //console.log("wordStartPos: " + wordStartPos)
-                //console.log("answerCursorPos: " + answerCursorPos)
-/*                var rect = textAreaDestination.positionToRectangle(answerCursorPos)
-
-
-//                var rect = textAreaDestination.positionToRectangle(openingBracketPosInDestTextArea)
-                textAreaDestination.multipleChoicesElementsArray[i].posInTextX = rect.x// - rect.width
-                console.log("posInTextX: " + rect.x)
-
-                textAreaDestination.multipleChoicesElementsArray[i].posInTextY = rect.y + rect.height + textArea.height + mainToolBar.height + appWin.height/3 + 24 -100
-                //console.log("posInTextY: " + textAreaDestination.multipleChoicesElementsArray[i].posInTextY)*/
-
-
-
-
-             /*   if (cursorPosition >= wordStartPos && cursorPosition <= wordEndPos) {
-
-                    console.log("----detected : cursorPosition: " + cursorPosition + " -- wordStartPos" + wordStartPos + " -- wordEndPos" + wordEndPos + " i: " + i)
-                    console.log("----question: " + textAreaDestination.multipleChoicesElementsArray[i].question)
-                    console.log("----good answers: " + textAreaDestination.multipleChoicesElementsArray[i].goodAnswers)
-                    console.log("----bad answers: " + textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
-
-                 //   var multipleChoicesArray = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers.concat(textAreaDestination.multipleChoicesElementsArray[i].badAnswers)
-                    console.log("----multipleChoicesArray: " + multipleChoicesArray)
-
-                    //var rect = textAreaDestination.positionToRectangle(wordStartPos)
-                    answerChoicesGridRepeater.model = multipleChoicesArray
-                    answerChoicesGrid.visible = true
-                    answerChoicesGrid.x = rect.x - rect.width
-                    answerChoicesGrid.y = rect.y + rect.height + textArea.height + mainToolBar.height
-                    answerChoices.answerChoicesIndex = i
-
-                    answerChoicesComboBox.visible = true
-                    answerChoicesComboBox.x = rect.x - rect.width
-                    answerChoicesComboBox.y = rect.y + rect.height + textArea.height + mainToolBar.height
-                    answerChoicesComboBox.model = multipleChoicesArray
-                    //answerChoices.answerChoicesIndex = i
-
-
-                    console.log(rect.y)
-                    console.log(textArea.height)
-                    console.log(rect.y + textArea.height + mainToolBar.height)
-                    console.log(mainToolBar.height)
-
-                 }*/
             }
-
-
-
 
             answerChoicesComboBoxes.visible = true
             answerChoicesComboBoxesRepeater.model = textAreaDestination.multipleChoicesElementsArray
 
+            console.log("-----------------------" + (answerChoicesComboBoxesRepeater.itemAt(1)).currentText())
         }
 
         function checkAnswers() {
-            for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
+
+            displayAnswerMarks = true
+            prepareAnswerFields()
+            displayAnswerChoices()
+
+            /*for (var i = 0; i < textAreaDestination.multipleChoicesElementsArray.length; i++) {
                 var currentChoicesElements = textAreaDestination.multipleChoicesElementsArray[2]
 
                 //console.log("currentChoicesElements question  " + currentChoicesElements.question)
@@ -711,7 +695,7 @@ ApplicationWindow {
                 }
 
 
-            }
+            }*/
 
         }
 
@@ -723,7 +707,7 @@ ApplicationWindow {
         anchors.top: textArea.bottom
         text: document.text
         textFormat: Qt.RichText
-        Component.onCompleted: forceActiveFocus()
+        //Component.onCompleted: forceActiveFocus()
 
 
       /*  flickableItem.onContentYChanged: {
