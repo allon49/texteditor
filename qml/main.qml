@@ -212,8 +212,8 @@ ApplicationWindow {
 
 
     Action {
-        id: createWikiAnswerChoices
-        text: "c&reate multiple answer"
+        id: prepareAnswerFields
+        text: "prepareAnswerFields"
         iconSource: "images/createmultianswerchoices.png"
         iconName: "xxx"
         onTriggered: {
@@ -223,8 +223,8 @@ ApplicationWindow {
     }
 
     Action {
-        id: createCheckAnswers
-        text: "c&reate multiple answer"
+        id: insertSpaceForMultipleChoiceBoxes
+        text: "insertSpaceForMultipleChoiceBoxes"
         iconSource: "images/ok.png"
         iconName: "xxx"
         onTriggered: {
@@ -233,7 +233,7 @@ ApplicationWindow {
     }
 
     Action {
-        id: createDeleteAnswers
+        id: deleteAnswerChoices
         text: "deleteAnswerChoices"
         iconSource: "images/ok.png"
         iconName: "xxx"
@@ -243,7 +243,7 @@ ApplicationWindow {
     }
 
     Action {
-        id: insertCombobox
+        id: insertMultipleChoiceBoxes
         text: "insertMultipleChoiceBoxes"
         iconSource: "images/ok.png"
         iconName: "xxx"
@@ -253,7 +253,7 @@ ApplicationWindow {
     }
 
     Action {
-        id: deleteCombobox
+        id: deleteMultipleChoiceBoxes
         text: "deleteMultipleChoiceBoxes"
         iconSource: "images/ok.png"
         iconName: "xxx"
@@ -289,6 +289,16 @@ ApplicationWindow {
         iconName: "xxx"
         onTriggered: {
             textAreaDestination.deleteSuccessAndFailMark()
+        }
+    }
+
+    Action {
+        id: startExercice
+        text: "startExercice"
+        iconSource: "images/arrow-right.png"
+        iconName: "xxx"
+        onTriggered: {
+            textAreaDestination.startExercice()
         }
     }
 
@@ -426,15 +436,15 @@ ApplicationWindow {
             }
             ToolBarSeparator {}
 
-            ToolButton { action: createWikiAnswerChoices }
+            ToolButton { action: prepareAnswerFields }
 
-            ToolButton { action: createCheckAnswers }
+            ToolButton { action: insertSpaceForMultipleChoiceBoxes }
 
-            ToolButton { action: createDeleteAnswers }
+            ToolButton { action: deleteAnswerChoices }
 
-            ToolButton { action: insertCombobox }
+            ToolButton { action: insertMultipleChoiceBoxes }
 
-            ToolButton { action: deleteCombobox }
+            ToolButton { action: deleteMultipleChoiceBoxes }
 
             ToolButton { action: insertSuccessAndFailMark }
 
@@ -442,7 +452,11 @@ ApplicationWindow {
 
             ToolButton { action: deleteSuccessAndFailMark }
 
+            ToolBarSeparator {}
 
+            ToolButton { action: startExercice }
+
+            ToolButton { action: checkAnswers }
 
             Item { Layout.fillWidth: true }
         }
@@ -508,9 +522,7 @@ ApplicationWindow {
         }
 
         onTextChanged: {
-       //     textAreaDestination.text = textArea.text
-       //     textAreaDestination.prepareAnswerFields()
-       //     textAreaDestination.displayAnswerChoices()
+            textAreaDestination.prepareAnswerFields()
         }
 
     }
@@ -523,12 +535,15 @@ ApplicationWindow {
         property var displayAnswerMarks : Boolean
         property var answersPlacesInserted: Boolean
         property var resultMarkStrInserted: Boolean
+        property var answerFieldsPrepared: Boolean
+
 
 
         Component.onCompleted: {
             displayAnswerMarks = false
             answersPlacesInserted = false
             resultMarkStrInserted = false
+            answerFieldsPrepared = false
         }
 
 
@@ -564,13 +579,23 @@ ApplicationWindow {
             return array;
         }
 
+
+
+        function startExercice() {
+            resultMarkStrInserted = false
+            textAreaDestination.prepareAnswerFields()
+            textAreaDestination.insertSpaceForMultipleChoiceBoxes()
+            textAreaDestination.insertMultipleChoiceBoxes()
+
+
+
+        }
+
         function prepareAnswerFields() {
 
-            answersPlacesInserted = false;
+            answersPlacesInserted = false
 
             textAreaDestination.text = textArea.text
-            console.log("ça marche")
-
 
             var openingBracketPos = 0
             var closingBracketPos = 0
@@ -604,26 +629,19 @@ ApplicationWindow {
                     closingBracketPosInDestTextArea = closingBracketPos - nbOfCharactersRemoved
 
                     bracketOpened = false
-                    console.log("openingBracketPosition: " + openingBracketPos)
-                    console.log("closingBracketPosition: " + closingBracketPos)
-                    console.log("openingBracketPosInDestTextArea: " + openingBracketPosInDestTextArea)
-                    console.log("closingBracketPosInDestTextArea: " + closingBracketPosInDestTextArea)
 
                     //extract the question, good and bad answers from multiple choices infos
                     var multipleChoiceElementStr = textArea.getText(openingBracketPos+1,closingBracketPos)
-                    console.log("multipleChoiceElement: " + multipleChoiceElementStr)
                     var questionStr
                     var goodAnswersArray = []
                     var badAnswersArray = []
                     var multipleChoiceElementStrArray = multipleChoiceElementStr.split("|")
-                    console.log("--- multipleChoiceElementStrArray: " + multipleChoiceElementStrArray)
                     for (var j = 0; j < multipleChoiceElementStrArray.length; j++) {
                         if (j == 0) {
                             questionStr = multipleChoiceElementStrArray[0]
                         }
                         else
                         {
-                            console.log("+-+-+------"+multipleChoiceElementStrArray[j])
                             if (multipleChoiceElementStrArray[j][multipleChoiceElementStrArray[j].length-1] == "*") {
                                 multipleChoiceElementStrArray[j] = multipleChoiceElementStrArray[j].substr(0,multipleChoiceElementStrArray[j].length-1)
                                 goodAnswersArray.push(multipleChoiceElementStrArray[j])                                
@@ -635,7 +653,7 @@ ApplicationWindow {
                     }
 
                     //store the for each question, its position, its good and bad answers
-                    var multipleChoiceElement = {posInText:0, posInDestText:0, posInDestTextX:0, posInDestTextY:0, comboboxWidth:0, comboBoxValue:"", answerFontFamily:"", answerFontSize:0, question:"", questionLength:0, shuffledPossibleAnswers:[], goodAnswers:[], badAnswers:[], longestChoiceStr:[], userAnswer:""}
+                    var multipleChoiceElement = {posInText:0, posInDestText:0, posInDestTextX:0, posInDestTextY:0, comboboxWidth:0, comboBoxValue:"", comboBoxIndex:0, answerFontFamily:"", answerFontSize:0, question:"", questionLength:0, shuffledPossibleAnswers:[], goodAnswers:[], badAnswers:[], longestChoiceStr:[], userAnswer:""}
 
 
                     multipleChoiceElement.posInText = openingBracketPosInDestTextArea
@@ -647,11 +665,6 @@ ApplicationWindow {
                     multipleChoiceElement.shuffledPossibleAnswers = shuffle(goodAnswersArray.concat(badAnswersArray))
                     multipleChoiceElement.longestChoiceStr = longestStrInArray(multipleChoiceElement.shuffledPossibleAnswers)
                     multipleChoicesElementsArray.push(multipleChoiceElement)
-
-                    console.log("--- multipleChoiceElement.question: " + multipleChoiceElement.question)
-                    console.log("--- multipleChoiceElement.goodAnswers: " + multipleChoiceElement.goodAnswers)
-                    console.log("--- multipleChoiceElement.badAnswers: " + multipleChoiceElement.badAnswers)
-
 
                     //remove the open bracket, the bad good and bad answers and the closing bracket
                     textAreaDestination.remove(openingBracketPosInDestTextArea+questionLength+1,closingBracketPosInDestTextArea+1)
@@ -666,8 +679,9 @@ ApplicationWindow {
                     nbOfCharactersRemoved = nbOfCharactersRemoved + (closingBracketPos - openingBracketPos - questionLength +1)
 
                 }
-                secondaryToolBar.secondaryToolBarRowLayout.scoreScreen.text = "test"
+                scoreScreen.text = "Score : 0/" + multipleChoicesElementsArray.length
             }
+            answerFieldsPrepared = true
         }
 
 
@@ -708,9 +722,6 @@ ApplicationWindow {
 
             var resultMarkStrPos = textAreaDestination.multipleChoicesElementsArray[choiceNumber].posInDestText + textAreaDestination.multipleChoicesElementsArray[choiceNumber].longestChoiceStr.length + 1
 
-            console.log("+++++++//++++++++" + textAreaDestination.multipleChoicesElementsArray[choiceNumber].posInDestText)
-
-
             //var answerStr = "<span style=\"color:red; font-size:%1pt;\"><pre>%2</pre></span>".arg(fontSize).arg(insertedLongestString)
             textAreaDestination.insert(resultMarkStrPos, resultMarkStr)
 
@@ -723,21 +734,13 @@ ApplicationWindow {
 
         
         
-        function deleteSuccessAndFailMark(result, choiceNumber) {
+        function deleteSuccessAndFailMark() {
 
             if (textAreaDestination.resultMarkStrInserted) {
                 for (var i = 0; i<textAreaDestination.multipleChoicesElementsArray.length; i++) {
 
                     var resultMarkStrPos = textAreaDestination.multipleChoicesElementsArray[i].posInDestText + textAreaDestination.multipleChoicesElementsArray[i].longestChoiceStr.length + 1
 
-                    console.log("+++++++//++++++++" + textAreaDestination.multipleChoicesElementsArray[i].posInDestText)
-
-
-                    //var str = textAreaDestination.getText(resultMarkStrPos+1,resultMarkStrPos+2)
-
-                    //console.log("yyyyy" + str.toUtf8())
-
-                    //var answerStr = "<span style=\"color:red; font-size:%1pt;\"><pre>%2</pre></span>".arg(fontSize).arg(insertedLongestString)
                     textAreaDestination.remove(resultMarkStrPos,resultMarkStrPos+2)
 
                     // shift the next multiple choices places from two chars: a blanck and the answerMark character
@@ -752,16 +755,28 @@ ApplicationWindow {
 
         function checkAnswers() {
 
+            if (textAreaDestination.resultMarkStrInserted) {
+                textAreaDestination.deleteSuccessAndFailMark()
+            }
+
+            var score = 0
             for (var i = 0; i<textAreaDestination.multipleChoicesElementsArray.length; i++) {
+
+
+
                 var goodAnswers = textAreaDestination.multipleChoicesElementsArray[i].goodAnswers
                 var comboBoxValue = textAreaDestination.multipleChoicesElementsArray[i].comboBoxValue
-                console.log("goodAnswers")
-                console.log(goodAnswers)
-                console.log("comboBoxValue")
-                console.log(comboBoxValue)
+                var shuffledVar = textAreaDestination.multipleChoicesElementsArray[i].shuffledPossibleAnswers
+             //   console.log("goodAnswers")
+             //   console.log(goodAnswers)
+             //   console.log("comboBoxValue")
+             //   console.log(comboBoxValue)
+                console.log("shuffled var " + i + ":")
+                console.log(shuffledVar)
                 var result = goodAnswers.indexOf(comboBoxValue);
                 if (result != -1) {
                     textAreaDestination.insertSuccessAndFailMark(true, i)
+                    score = score + 1
                 }
                 else
                 {
@@ -770,11 +785,9 @@ ApplicationWindow {
 
 
             }
+            textAreaDestination.insertMultipleChoiceBoxes()
+            scoreScreen.text = "Score : " + score + "/" + multipleChoicesElementsArray.length
 
-            /*textAreaDestination.insertSuccessAndFailMark(true, 0)
-            textAreaDestination.insertSuccessAndFailMark(false, 1)
-            textAreaDestination.insertSuccessAndFailMark(true, 2)
-            textAreaDestination.insertSuccessAndFailMark(false, 3)*/
 
         }
 
@@ -801,7 +814,7 @@ ApplicationWindow {
                 var fontFamily = destDocument.fontFamily
                 textAreaDestination.multipleChoicesElementsArray[i].answerFontFamily = fontFamily
 
-                console.log("+++++++**++++++++" + textAreaDestination.multipleChoicesElementsArray[i].userAnswer)
+                //console.log("+++++++**++++++++" + textAreaDestination.multipleChoicesElementsArray[i].userAnswer)
 
                 //find what is the longest choice in choicesArray and insert it in the text to prepare the place for the ComboBox
                 var insertedLongestString = " " + textAreaDestination.multipleChoicesElementsArray[i].longestChoiceStr
@@ -822,18 +835,14 @@ ApplicationWindow {
                 //store the multiple choices answers positions in array to be used in model
                 var comboBoxPos = textAreaDestination.multipleChoicesElementsArray[i].posInDestText
                 var rect = textAreaDestination.positionToRectangle(comboBoxPos+1)
-                console.log("---------------------choice: %1 - x: %2 y: %3".arg(i).arg(rect.x).arg(rect.y))
                 textAreaDestination.multipleChoicesElementsArray[i].posInDestTextX = rect.x
                 textAreaDestination.multipleChoicesElementsArray[i].posInDestTextY = rect.y
-               //  textAreaDestination.multipleChoicesElementsArray[i].posInDestTextX = 200
-               //  textAreaDestination.multipleChoicesElementsArray[i].posInDestTextY = 200
 
                 //calculate choices answers width to set combobox width
                 destDocument.cursorPosition = comboBoxPos+3
                 destDocument.selectionStart = comboBoxPos +3
                 destDocument.selectionEnd = comboBoxPos+4
                 var stringWidth = destDocument.stringWidth
-                console.log("text size inpixel: "+ stringWidth)
                 textAreaDestination.multipleChoicesElementsArray[i].comboboxWidth = stringWidth
             }
 
@@ -924,8 +933,8 @@ ApplicationWindow {
 
                 ComboBox {
                     id: box
-                    currentIndex: 2
                     activeFocusOnPress: true
+                    currentIndex: textAreaDestination.multipleChoicesElementsArray[index].comboBoxIndex
 
                     style: ComboBoxStyle {
                         id: comboBox
@@ -1002,6 +1011,7 @@ ApplicationWindow {
 
                     model: modelData.shuffledPossibleAnswers
                     width: modelData.comboboxWidth
+                   // currentIndex: modelData.comboBoxValue
                     z: 10000
                     x: modelData.posInDestTextX
                     y: modelData.posInDestTextY-4
@@ -1009,9 +1019,10 @@ ApplicationWindow {
 
 
                     onCurrentTextChanged: {
-                        console.log("------- modelData: " + index)
+                        //console.log("------- modelData: " + index)
                         textAreaDestination.multipleChoicesElementsArray[index].comboBoxValue = currentText
-                        console.log("------- comboboxvalue" + textAreaDestination.multipleChoicesElementsArray[index].comboBoxValue)
+                        textAreaDestination.multipleChoicesElementsArray[index].comboBoxIndex = currentIndex
+                        //console.log("------- comboboxvalue" + textAreaDestination.multipleChoicesElementsArray[index].comboBoxValue)
                     }
                 }
             }
@@ -1084,11 +1095,9 @@ ApplicationWindow {
         onFontSizeChanged: {
             fontSizeSpinBox.valueGuard = false
             fontSizeSpinBox.value = destDocument.fontSize
-            console.log("fontSize changed: " + destDocument.fontSize)
             fontSizeSpinBox.valueGuard = true
         }
         onFontFamilyChanged: {
-            console.log("fontFamily changed: " + destDocument.fontFamily)
             var index = Qt.fontFamilies().indexOf(destDocument.fontFamily)
             if (index == -1) {
                 fontFamilyComboBox.currentIndex = 0
